@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blinkit: Partner Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@800;900&family=Caveat:wght@600&family=Lexend:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- THEME CONFIGURATION --- */
+        :root {
+            --bg-kraft: #d2b48c;
+            --bg-kraft-light: #e3c5a8;
+            --blinkit-yellow: #f3e008;
+            --blinkit-red: #b22222;
+            --ink-color: #00008b; /* Dark Blue Ink */
+            --shadow-hard: 5px 5px 0px 0px #000000;
+            --shadow-hard-sm: 3px 3px 0px 0px #000000;
+            --border-thick: 3px solid #000000;
+        }
+
+        body {
+            background-color: var(--bg-kraft);
+            /* SVG Noise Pattern for Paper Texture */
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+            font-family: 'Lexend', sans-serif;
+            color: #000;
+            overflow-x: hidden;
+            padding-bottom: 100px;
+        }
+
+        /* --- NEOBRUTALISM UTILS --- */
+        .neo-card {
+            background: var(--bg-kraft-light);
+            border: var(--border-thick);
+            box-shadow: var(--shadow-hard);
+            transition: all 0.1s ease;
+            position: relative;
+        }
+
+        .neo-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0px 0px #000000;
+        }
+
+        .neo-card:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px 0px #000000;
+        }
+
+        /* Slight rotation for natural feeling */
+        .tilt-1 { transform: rotate(-1deg); }
+        .tilt-2 { transform: rotate(1deg); }
+        .tilt-3 { transform: rotate(-0.5deg); }
+
+        /* --- TYPOGRAPHY --- */
+        h1, h2, h3 { font-family: 'Archivo', sans-serif; }
+        
+        .handwritten {
+            font-family: 'Caveat', cursive;
+            color: var(--ink-color);
+            font-size: 1.5rem;
+            line-height: 1.2;
+            border: none;
+            background: transparent;
+            width: 100%;
+            outline: none;
+            background-image: linear-gradient(to right, black 33%, rgba(255,255,255,0) 0%);
+            background-position: bottom;
+            background-size: 10px 1px;
+            background-repeat: repeat-x;
+        }
+
+        .handwritten::placeholder {
+            color: rgba(0,0,0,0.2);
+            font-family: 'Lexend', sans-serif;
+            font-size: 1rem;
+        }
+
+        /* --- POINTS BADGE --- */
+        .points-badge {
+            background-color: var(--blinkit-red);
+            color: white;
+            font-weight: 900;
+            border: 2px solid black;
+            font-size: 0.8rem;
+            padding: 2px 6px;
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            box-shadow: 2px 2px 0px black;
+        }
+
+        /* --- CHOICE CHIPS --- */
+        .choice-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .choice-btn {
+            background: transparent;
+            border: 2px solid black;
+            padding: 8px 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .choice-btn.selected {
+            background: var(--blinkit-yellow);
+            box-shadow: var(--shadow-hard-sm);
+        }
+
+        .choice-circle {
+            width: 16px;
+            height: 16px;
+            border: 2px solid black;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .choice-btn.selected .choice-circle {
+            background: black;
+        }
+
+        /* --- GRID LAYOUTS --- */
+        .grid-custom {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header specifics */
+        .blinkit-logo {
+            letter-spacing: -2px;
+            text-shadow: 3px 3px 0px rgba(0,0,0,0.1);
+        }
+
+        /* Animations */
+        @keyframes crinkle {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.98) rotate(1deg); }
+            100% { transform: scale(1); }
+        }
+        .anim-crinkle { animation: crinkle 0.2s ease; }
+
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0); opacity: 1; }
+            100% { transform: translateY(100px) rotate(720deg); opacity: 0; }
+        }
+
+        /* Confetti particle */
+        .particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--blinkit-yellow);
+            border: 1px solid black;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .stamp-checkbox {
+            appearance: none;
+            width: 40px;
+            height: 40px;
+            border: 3px solid black;
+            background: white;
+            cursor: pointer;
+            display: grid;
+            place-content: center;
+        }
+        
+        .stamp-checkbox::before {
+            content: "✓";
+            font-weight: 900;
+            font-size: 24px;
+            color: white;
+            display: none;
+        }
+        
+        .stamp-checkbox:checked {
+            background: #00c853;
+        }
+        
+        .stamp-checkbox:checked::before {
+            display: block;
+        }
+
+        .hidden-mode { display: none; }
+
+        .neo-box {
+            background: #e3c5a8;
+            border: 3px solid black;
+            box-shadow: 5px 5px 0px 0px black;
+            transition: transform 0.1s;
+        }
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'blinkit-yellow': '#f3e008',
+                        'blinkit-red': '#b22222',
+                        'kraft': '#d2b48c',
+                        'kraft-light': '#e3c5a8',
+                    },
+                    boxShadow: {
+                        'neo': '5px 5px 0px 0px #000000',
+                        'neo-sm': '3px 3px 0px 0px #000000',
+                        'neo-lg': '8px 8px 0px 0px #000000',
+                    }
+                }
+            }
+        }
+    </script>    
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- HEADER SECTION -->
+    <header class="max-w-[1200px] mx-auto mb-8 border-b-4 border-black pb-6 relative">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="blinkit-logo text-5xl md:text-7xl font-black text-black">blinkit</h1>
+                <p class="font-bold text-sm tracking-widest mt-1">INDIA'S LAST MINUTE APP</p>
+            </div>
+            <div class="text-left md:text-right max-w-lg">
+                <h2 class="text-2xl md:text-3xl font-black leading-tight">How well do you <span class="text-[--blinkit-red] italic">really</span> know your partner?</h2>
+                <p class="text-sm font-semibold mt-2 opacity-80">Both sides have same questions. No hints. Highest score wins.</p>
+            </div>
+        </div>
+
+        <!-- Meta Data Bar -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div class="neo-card p-2 tilt-1 flex flex-col">
+                <label class="text-xs font-black uppercase">Partner's Name:</label>
+                <input type="text" class="handwritten" placeholder="Enter name...">
+            </div>
+            <div class="neo-card p-2 tilt-2 flex flex-col">
+                <label class="text-xs font-black uppercase">Date:</label>
+                <input type="text" id="dateDisplay" class="handwritten" readonly>
+            </div>
+            <div class="neo-card p-2 tilt-3 bg-white flex flex-col relative overflow-hidden">
+                <label class="text-xs font-black uppercase">Total Score:</label>
+                <div id="scoreDisplay" class="text-4xl font-black text-right pr-4">00</div>
+                <div class="absolute top-0 right-0 bg-[--blinkit-yellow] border-l-2 border-b-2 border-black p-1 text-[10px] font-bold">LIVE</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN GAME GRID -->
+    <main class="grid-custom">
+
+        <!-- Column 1: The Basics (5 Points) -->
+        <div class="flex flex-col gap-6">
+            <!-- Card -->
+            <div class="neo-card p-4 tilt-1" data-points="5">
+                <h3 class="font-bold text-lg mb-4">Favourite Hobby</h3>
+                <input type="text" class="handwritten h-12" placeholder="Start writing...">
+                <div class="points-badge">05 POINTS</div>
+            </div>
+
+            <div class="neo-card p-4 tilt-2" data-points="5">
+                <h3 class="font-bold text-lg mb-4">Favourite Dessert</h3>
+                <input type="text" class="handwritten h-12">
+                <div class="points-badge">05 POINTS</div>
+            </div>
+
+            <div class="neo-card p-4 tilt-3" data-points="5">
+                <h3 class="font-bold text-lg mb-4">Favourite Weather</h3>
+                <input type="text" class="handwritten h-12">
+                <div class="points-badge">05 POINTS</div>
+            </div>
+
+            <div class="neo-card p-4 tilt-1" data-points="5">
+                <h3 class="font-bold text-lg mb-4">Favourite Snack</h3>
+                <input type="text" class="handwritten h-12">
+                <div class="points-badge">05 POINTS</div>
+            </div>
+            
+            <div class="neo-card p-4 tilt-2" data-points="5">
+                <h3 class="font-bold text-lg mb-4">Favourite City</h3>
+                <input type="text" class="handwritten h-12">
+                <div class="points-badge">05 POINTS</div>
+            </div>
+        </div>
+
+        <!-- Column 2: Deeper (10 Points) -->
+        <div class="flex flex-col gap-6 pt-8 md:pt-0">
+            <div class="neo-card p-4 tilt-3 bg-[#e8dcc5]" data-points="10">
+                <h3 class="font-bold text-lg mb-4">Comfort Food</h3>
+                <textarea class="handwritten h-20 resize-none"></textarea>
+                <div class="points-badge">10 POINTS</div>
+            </div>
+
+            <div class="neo-card p-4 tilt-1 bg-[#e8dcc5]" data-points="10">
+                <h3 class="font-bold text-lg mb-4">City they were born in</h3>
+                <input type="text" class="handwritten h-12">
+                <div class="points-badge">10 POINTS</div>
+            </div>
+
+            <div class="neo-card p-4 tilt-2 bg-[#e8dcc5]" data-points="10">
+                <h3 class="font-bold text-lg mb-4">Childhood Nickname</h3>
+                <input type="text" class="handwritten h-12">
+                <div class="points-badge">10 POINTS</div>
+            </div>
+
+            <div class="neo-card p-4 tilt-3 bg-[#e8dcc5]" data-points="10">
+                <h3 class="font-bold text-lg mb-4">First Mobile Phone</h3>
+                <input type="text" class="handwritten h-12">
+                <div class="points-badge">10 POINTS</div>
+            </div>
+
+             <div class="neo-card p-4 tilt-1 bg-[#e8dcc5]" data-points="10">
+                <h3 class="font-bold text-lg mb-4">First Solo Trip</h3>
+                <input type="text" class="handwritten h-12">
+                <div class="points-badge">10 POINTS</div>
+            </div>
+        </div>
+
+        <!-- Column 3: Complex (15 Points) -->
+        <div class="flex flex-col gap-6 pt-4 md:pt-12">
+            <div class="neo-card p-4 tilt-2" data-points="15">
+                <h3 class="font-bold text-lg mb-2">An outfit they love the most</h3>
+                <textarea class="handwritten h-24 resize-none"></textarea>
+                <div class="points-badge">15 POINTS</div>
+            </div>
+
+            <div class="neo-card p-4 tilt-3" data-points="15">
+                <h3 class="font-bold text-lg mb-2">Their childhood dream job</h3>
+                <textarea class="handwritten h-24 resize-none"></textarea>
+                <div class="points-badge">15 POINTS</div>
+            </div>
+
+            <div class="neo-card p-4 tilt-1" data-points="15">
+                <h3 class="font-bold text-lg mb-2">A subject in school they never liked</h3>
+                <textarea class="handwritten h-24 resize-none"></textarea>
+                <div class="points-badge">15 POINTS</div>
+            </div>
+
+             <div class="neo-card p-4 tilt-2" data-points="15">
+                <h3 class="font-bold text-lg mb-2">A personal possession they value a lot</h3>
+                <textarea class="handwritten h-24 resize-none"></textarea>
+                <div class="points-badge">15 POINTS</div>
+            </div>
+        </div>
+
+        <!-- Column 4: High Stakes & Binary (20 Points & Options) -->
+        <div class="flex flex-col gap-6">
+            <!-- 20 Pointers -->
+            <div class="neo-card p-4 tilt-3 bg-[--blinkit-yellow]" data-points="20">
+                <h3 class="font-bold text-lg mb-2">Pet Peeve</h3>
+                <p class="text-xs font-bold mb-2 opacity-70">(What annoys them?)</p>
+                <textarea class="handwritten h-16 resize-none"></textarea>
+                <div class="points-badge bg-black text-[--blinkit-yellow] border-white">20 POINTS</div>
+            </div>
+
+            <div class="neo-card p-4 tilt-1 bg-[--blinkit-yellow]" data-points="20">
+                <h3 class="font-bold text-lg mb-4">Ideal way to relax</h3>
+                <textarea class="handwritten h-16 resize-none"></textarea>
+                <div class="points-badge bg-black text-[--blinkit-yellow] border-white">20 POINTS</div>
+            </div>
+
+            <!-- Binary Choices -->
+            <div class="neo-card p-4 tilt-2" data-points="5">
+                <div class="points-badge top-0 right-0 bottom-auto border-t-0 border-r-0">05 PTS EACH</div>
+                
+                <div class="flex flex-col gap-4 mt-6">
+                    <!-- Set 1 -->
+                    <div class="choice-group" id="c1">
+                        <button class="choice-btn" onclick="toggleChoice(this, 'c1')"><span class="choice-circle"></span> Coffee</button>
+                        <button class="choice-btn" onclick="toggleChoice(this, 'c1')"><span class="choice-circle"></span> Chai</button>
+                    </div>
+                     <hr class="border-black">
+                    <!-- Set 2 -->
+                    <div class="choice-group" id="c2">
+                        <button class="choice-btn" onclick="toggleChoice(this, 'c2')"><span class="choice-circle"></span> Beaches</button>
+                        <button class="choice-btn" onclick="toggleChoice(this, 'c2')"><span class="choice-circle"></span> Mountains</button>
+                    </div>
+                    <hr class="border-black">
+                    <!-- Set 3 -->
+                     <div class="choice-group" id="c3">
+                        <button class="choice-btn" onclick="toggleChoice(this, 'c3')"><span class="choice-circle"></span> Dogs</button>
+                        <button class="choice-btn" onclick="toggleChoice(this, 'c3')"><span class="choice-circle"></span> Cats</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ACTION BUTTONS -->
+    <div class="w-full max-w-3xl mt-12 flex flex-col gap-4">
+        
+        <!-- STEP 1: CREATE LINK -->
+        <button id="createLinkBtn" class="w-full bg-blinkit-yellow border-4 border-black p-4 text-xl font-black shadow-neo-lg hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo active:shadow-none transition-all uppercase">
+            📦 Pack Bag & Copy Link
+        </button>
+
+        <!-- STEP 2: REVEAL RESULTS (Only for Player 2) -->
+        <button id="revealBtn" class="hidden-mode w-full bg-blinkit-red text-white border-4 border-black p-4 text-xl font-black shadow-neo-lg hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo active:shadow-none transition-all uppercase">
+            🕵️ Reveal & Check Score
+        </button>
+
+    </div>
+
+    <!-- RESULT MODAL (Overlay) -->
+    <div id="shareOverlay" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-blinkit-yellow border-4 border-black p-8 max-w-md w-full shadow-[10px_10px_0_white] text-center">
+            <h2 class="text-3xl font-black mb-4">CHALLENGE PACKED! 🎒</h2>
+            <p class="font-bold mb-4">Copy this link and send it to your partner.</p>
+            <input type="text" id="shareInput" class="w-full border-2 border-black p-2 font-mono text-sm mb-4" readonly>
+            <button onclick="copyLink()" class="bg-black text-white font-bold py-3 px-6 w-full hover:bg-gray-800">COPY LINK</button>
+            <button onclick="document.getElementById('shareOverlay').classList.add('hidden')" class="mt-4 text-xs font-bold underline">Close</button>
+        </div>
+    </div>
+
+    <!-- Audio Elements (Hidden) -->
+    <div class="fixed top-4 right-4 z-50">
+        <button id="soundToggle" class="bg-black text-white text-xs font-bold py-2 px-4 border-2 border-white shadow-lg">ENABLE SOUNDS</button>
+    </div>
+
+    <script>
+        // --- 1. SETUP ---
+        const dateDisplay = document.getElementById('dateDisplay');
+        dateDisplay.value = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        let score = 0;
+        let soundEnabled = false;
+
+        // --- 2. SOUND ENGINE (Simulated) ---
+        // Since we can't load external MP3s reliably in a snippet, we create a visual "Sound" indicator
+        // or attempt a very basic Web Audio API beep if requested, but visual feedback is safer here.
+        
+        const toggleBtn = document.getElementById('soundToggle');
+        toggleBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            toggleBtn.innerText = soundEnabled ? "SOUNDS ON 🔊" : "SOUNDS OFF 🔇";
+            toggleBtn.style.backgroundColor = soundEnabled ? "var(--blinkit-yellow)" : "black";
+            toggleBtn.style.color = soundEnabled ? "black" : "white";
+        });
+
+        function playPaperSound() {
+            if(!soundEnabled) return;
+            // Visual feedback of sound
+            document.body.style.transform = `scale(${0.999 + Math.random() * 0.002})`;
+            setTimeout(() => document.body.style.transform = 'scale(1)', 50);
+        }
+
+        // --- 3. INTERACTION LOGIC ---
+
+        // Input Focus Effects
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                playPaperSound();
+                input.closest('.neo-card').classList.add('anim-crinkle');
+                // Remove animation class after it plays so it can play again
+                setTimeout(() => input.closest('.neo-card').classList.remove('anim-crinkle'), 200);
+            });
+
+            // Simulate "Scoring" when filled (Visual Feedback only for this demo)
+            input.addEventListener('blur', () => {
+                if(input.value.trim().length > 0) {
+                    const badge = input.closest('.neo-card').querySelector('.points-badge');
+                    badge.style.backgroundColor = '#00c853'; // Green
+                    badge.style.borderColor = '#00c853'; 
+                    badge.innerHTML = "LOCKED";
+                    checkCompletion();
+                }
+            });
+        });
+
+        // Choice Chip Logic
+        window.toggleChoice = function(btn, groupId) {
+            playPaperSound();
+            const group = document.getElementById(groupId);
+            const buttons = group.querySelectorAll('.choice-btn');
+            
+            // Toggle off others
+            buttons.forEach(b => {
+                b.classList.remove('selected');
+            });
+
+            // Select clicked
+            btn.classList.add('selected');
+            checkCompletion();
+        }
+
+        // --- 4. SCORING ANIMATION ---
+        // For the demo, "Submit" calculates a mock score based on filled fields
+        
+        document.getElementById('finishBtn').addEventListener('click', () => {
+            // Count filled inputs
+            let filledCount = 0;
+            inputs.forEach(i => { if(i.value.trim() !== '') filledCount++; });
+            
+            // Count toggles
+            const toggled = document.querySelectorAll('.choice-btn.selected').length;
+            
+            const totalActions = filledCount + toggled;
+            
+            // Simulate calculation effect
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            let currentDisplay = 0;
+            
+            // Random mock score generation for the "Game" feel
+            const maxScore = 185; 
+            const finalScore = Math.min(Math.floor((totalActions / 20) * maxScore), maxScore);
+
+            const interval = setInterval(() => {
+                currentDisplay += 5;
+                scoreDisplay.innerText = currentDisplay.toString().padStart(2, '0');
+                if(currentDisplay >= finalScore) {
+                    clearInterval(interval);
+                    scoreDisplay.innerText = finalScore;
+                    triggerConfetti();
+                    alert(`Challenge Complete! Your Partner Score: ${finalScore}/${maxScore}\nTake a screenshot and send it to them!`);
+                }
+            }, 50);
+        });
+
+        function checkCompletion() {
+            // Logic to unlock the submit button could go here
+        }
+
+        // --- 5. VISUAL FX ---
+        function triggerConfetti() {
+            for(let i=0; i<50; i++) {
+                const p = document.createElement('div');
+                p.classList.add('particle');
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.top = window.scrollY + 'px'; // Start from current scroll
+                p.style.backgroundColor = Math.random() > 0.5 ? 'var(--blinkit-yellow)' : 'var(--blinkit-red)';
+                p.style.animation = `confetti 1s ease-out forwards`;
+                p.style.animationDelay = Math.random() * 0.5 + 's';
+                document.body.appendChild(p);
+                
+                setTimeout(() => p.remove(), 2000);
+            }
+        }
+
+    </script>
+</body>
+</html>

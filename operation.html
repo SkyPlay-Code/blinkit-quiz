@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blinkit Partner Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@800;900&family=Caveat:wght@700&family=Lexend:wght@500;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'blinkit-yellow': '#f3e008',
+                        'blinkit-red': '#b22222',
+                        'kraft': '#d2b48c',
+                        'kraft-light': '#e3c5a8',
+                    },
+                    boxShadow: {
+                        'neo': '5px 5px 0px 0px #000000',
+                        'neo-sm': '3px 3px 0px 0px #000000',
+                        'neo-lg': '8px 8px 0px 0px #000000',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #d2b48c;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.1'/%3E%3C/svg%3E");
+            font-family: 'Lexend', sans-serif;
+            color: #000;
+        }
+
+        .handwritten {
+            font-family: 'Caveat', cursive;
+            color: #00008b;
+            font-size: 1.5rem;
+            background: transparent;
+            border-bottom: 2px dashed #000;
+            width: 100%;
+            outline: none;
+            padding: 4px 0;
+        }
+        
+        .handwritten::placeholder {
+            color: rgba(0,0,0,0.3);
+            font-family: 'Lexend', sans-serif;
+            font-size: 1rem;
+        }
+
+        .neo-box {
+            background: #e3c5a8;
+            border: 3px solid black;
+            box-shadow: 5px 5px 0px 0px black;
+            transition: transform 0.1s;
+        }
+
+        .stamp-checkbox {
+            appearance: none;
+            width: 40px;
+            height: 40px;
+            border: 3px solid black;
+            background: white;
+            cursor: pointer;
+            display: grid;
+            place-content: center;
+        }
+        
+        .stamp-checkbox::before {
+            content: "✓";
+            font-weight: 900;
+            font-size: 24px;
+            color: white;
+            display: none;
+        }
+        
+        .stamp-checkbox:checked {
+            background: #00c853;
+        }
+        
+        .stamp-checkbox:checked::before {
+            display: block;
+        }
+
+        .hidden-mode { display: none; }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex flex-col items-center">
+
+    <!-- HEADER -->
+    <header class="w-full max-w-3xl mb-8 flex justify-between items-center border-b-4 border-black pb-4">
+        <div>
+            <h1 class="text-5xl md:text-6xl font-black tracking-tighter">blinkit</h1>
+            <p class="text-xs font-bold tracking-[0.3em] mt-1">PARTNER CHALLENGE</p>
+        </div>
+        <div class="neo-box bg-blinkit-yellow p-2 px-4 rotate-2">
+            <span class="text-xs font-black block">SCORE</span>
+            <span id="scoreDisplay" class="text-4xl font-black">00</span>
+        </div>
+    </header>
+
+    <!-- INSTRUCTIONS -->
+    <div id="introCard" class="w-full max-w-3xl neo-box bg-white p-6 mb-8 relative">
+        <h2 id="modeTitle" class="text-2xl font-black mb-2">CREATE YOUR QUIZ</h2>
+        <p id="modeDesc" class="font-bold opacity-70">Fill out your answers below. We'll generate a secret link for your partner to guess!</p>
+    </div>
+
+    <!-- THE FORM GRID -->
+    <form id="quizForm" class="w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Questions injected by JS -->
+        
+    </form>
+
+    <!-- ACTION BUTTONS -->
+    <div class="w-full max-w-3xl mt-12 flex flex-col gap-4">
+        
+        <!-- STEP 1: CREATE LINK -->
+        <button id="createLinkBtn" class="w-full bg-blinkit-yellow border-4 border-black p-4 text-xl font-black shadow-neo-lg hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo active:shadow-none transition-all uppercase">
+            📦 Pack Bag & Copy Link
+        </button>
+
+        <!-- STEP 2: REVEAL RESULTS (Only for Player 2) -->
+        <button id="revealBtn" class="hidden-mode w-full bg-blinkit-red text-white border-4 border-black p-4 text-xl font-black shadow-neo-lg hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo active:shadow-none transition-all uppercase">
+            🕵️ Reveal & Check Score
+        </button>
+
+    </div>
+
+    <!-- RESULT MODAL (Overlay) -->
+    <div id="shareOverlay" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-blinkit-yellow border-4 border-black p-8 max-w-md w-full shadow-[10px_10px_0_white] text-center">
+            <h2 class="text-3xl font-black mb-4">CHALLENGE PACKED! 🎒</h2>
+            <p class="font-bold mb-4">Copy this link and send it to your partner.</p>
+            <input type="text" id="shareInput" class="w-full border-2 border-black p-2 font-mono text-sm mb-4" readonly>
+            <button onclick="copyLink()" class="bg-black text-white font-bold py-3 px-6 w-full hover:bg-gray-800">COPY LINK</button>
+            <button onclick="document.getElementById('shareOverlay').classList.add('hidden')" class="mt-4 text-xs font-bold underline">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURATION ---
+        const questions = [
+            { id: 'q1', text: 'Comfort Food', points: 10 },
+            { id: 'q2', text: 'Pet Peeve (What annoys me?)', points: 20 },
+            { id: 'q3', text: 'Dream Vacation', points: 10 },
+            { id: 'q4', text: 'Fav Movie/Series', points: 5 },
+            { id: 'q5', text: 'Coffee or Chai?', points: 5 },
+            { id: 'q6', text: 'My Hidden Talent', points: 15 }
+        ];
+
+        const formContainer = document.getElementById('quizForm');
+        let player1Data = null; // Stores P1 answers if we are P2
+        let mode = 'CREATOR';   // 'CREATOR' or 'GUESSER'
+
+        // --- 2. INITIALIZATION ---
+        
+        // Check URL for data
+        const urlParams = new URLSearchParams(window.location.search);
+        const encodedData = urlParams.get('d');
+
+        if (encodedData) {
+            mode = 'GUESSER';
+            setupGuesserMode(encodedData);
+        } else {
+            renderCreatorForm();
+        }
+
+        // --- 3. RENDER FUNCTIONS ---
+
+        function renderCreatorForm() {
+            formContainer.innerHTML = '';
+            questions.forEach((q, index) => {
+                const rotation = (index % 2 === 0) ? '-1deg' : '1deg';
+                const html = `
+                    <div class="neo-box p-4" style="transform: rotate(${rotation})">
+                        <div class="flex justify-between items-start mb-2">
+                            <label class="font-bold text-lg leading-none">${q.text}</label>
+                            <span class="bg-blinkit-red text-white border-2 border-black text-xs font-black px-1 py-0.5">${q.points} PTS</span>
+                        </div>
+                        <input type="text" name="${q.id}" class="handwritten" placeholder="Write answer..." autocomplete="off">
+                    </div>
+                `;
+                formContainer.innerHTML += html;
+            });
+        }
+
+        function setupGuesserMode(dataString) {
+            try {
+                // Decode: Base64 -> String -> JSON
+                // decoding unicode requires a small hack with percent-encoding
+                const jsonString = decodeURIComponent(escape(atob(dataString)));
+                player1Data = JSON.parse(jsonString);
+
+                // UI Updates
+                document.getElementById('modeTitle').innerText = "GUESS YOUR PARTNER";
+                document.getElementById('modeDesc').innerText = "Your partner has locked their answers! Fill in what you think THEY said.";
+                document.getElementById('createLinkBtn').classList.add('hidden-mode');
+                document.getElementById('revealBtn').classList.remove('hidden-mode');
+
+                // Render Form (Empty for P2 to fill)
+                renderCreatorForm(); 
+
+            } catch (e) {
+                alert("Invalid Link! Sending you back to start.");
+                window.location.href = window.location.pathname;
+            }
+        }
+
+        // --- 4. LOGIC HANDLERS ---
+
+        // CREATOR: Generate Link
+        document.getElementById('createLinkBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            const formData = {};
+            let isFilled = true;
+
+            // Gather inputs
+            questions.forEach(q => {
+                const val = document.querySelector(`input[name="${q.id}"]`).value;
+                if(!val.trim()) isFilled = false;
+                formData[q.id] = val;
+            });
+
+            if(!isFilled) {
+                alert("Please fill out all fields before packing the bag!");
+                return;
+            }
+
+            // Encode: JSON -> String -> Base64
+            // escaping for unicode support (emojis)
+            const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
+            
+            // Build URL
+            const shareUrl = `${window.location.origin}${window.location.pathname}?d=${b64}`;
+            
+            // Show Overlay
+            document.getElementById('shareInput').value = shareUrl;
+            document.getElementById('shareOverlay').classList.remove('hidden');
+        });
+
+        // GUESSER: Reveal & Score
+        document.getElementById('revealBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            const p2Inputs = document.querySelectorAll('#quizForm input');
+            let p2Answers = {};
+            
+            // Collect P2 answers
+            p2Inputs.forEach(input => {
+                p2Answers[input.name] = input.value;
+            });
+
+            // TRANSFORM UI INTO COMPARISON MODE
+            formContainer.innerHTML = ''; // Clear inputs
+            
+            questions.forEach((q, index) => {
+                const p1Ans = player1Data[q.id];
+                const p2Ans = p2Answers[q.id] || "-";
+                
+                const html = `
+                    <div class="neo-box p-4 bg-white relative col-span-1 md:col-span-2 flex flex-col md:flex-row gap-4 items-center">
+                        
+                        <!-- Question Info -->
+                        <div class="w-full md:w-1/4 text-center md:text-left border-b-2 md:border-b-0 md:border-r-2 border-dashed border-black pb-2 md:pb-0 md:pr-4">
+                            <h3 class="font-bold">${q.text}</h3>
+                            <span class="text-xs bg-black text-white px-2 py-1">${q.points} PTS</span>
+                        </div>
+
+                        <!-- Comparison Area -->
+                        <div class="flex-1 w-full grid grid-cols-2 gap-4 text-center">
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-widest text-gray-500">THEIR ANSWER</p>
+                                <p class="font-handwritten text-xl text-blinkit-red font-bold">${p1Ans}</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-widest text-gray-500">YOUR GUESS</p>
+                                <p class="font-handwritten text-xl text-blue-800">${p2Ans}</p>
+                            </div>
+                        </div>
+
+                        <!-- Manual Stamp -->
+                        <div class="w-full md:w-auto flex flex-col items-center justify-center border-t-2 md:border-t-0 md:border-l-2 border-black pt-2 md:pt-0 md:pl-4">
+                            <label class="text-[10px] font-bold uppercase mb-1">MATCH?</label>
+                            <input type="checkbox" class="stamp-checkbox" onchange="updateScore(this, ${q.points})">
+                        </div>
+                    </div>
+                `;
+                formContainer.innerHTML += html;
+            });
+
+            // Hide reveal button, show "Done" message
+            document.getElementById('revealBtn').classList.add('hidden-mode');
+            document.getElementById('modeTitle').innerText = "SCORECARD";
+            document.getElementById('modeDesc').innerText = "Tick the boxes on the right if the answers match (be honest!).";
+            window.scrollTo(0,0);
+        });
+
+        // --- 5. UTILS ---
+
+        function updateScore(checkbox, points) {
+            const scoreEl = document.getElementById('scoreDisplay');
+            let currentScore = parseInt(scoreEl.innerText);
+            
+            if(checkbox.checked) {
+                currentScore += points;
+                // Add a little pop animation
+                checkbox.parentElement.parentElement.style.backgroundColor = "#eaffea";
+            } else {
+                currentScore -= points;
+                checkbox.parentElement.parentElement.style.backgroundColor = "white";
+            }
+            
+            scoreEl.innerText = currentScore.toString().padStart(2, '0');
+        }
+
+        function copyLink() {
+            const copyText = document.getElementById("shareInput");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value);
+            alert("Link copied! Send it to your partner.");
+        }
+    </script>
+</body>
+</html>
