@@ -618,7 +618,7 @@
                 if (field) data[qid] = field.value.trim();
             });
             // Binary choices
-            ['c1','c2','c3'].forEach(gid => {
+            ['c1','c2','c3', 'c4', 'c5'].forEach(gid => {
                 const selected = document.querySelector(`#${gid} .choice-btn.selected`);
                 data[gid] = selected ? selected.innerText.trim() : '';
             });
